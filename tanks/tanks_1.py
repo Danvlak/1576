@@ -5,6 +5,8 @@ from PIL import Image, ImageTk
 window_width = 600
 window_height = 600
 
+bullets = []
+
 #карта
 game_map = [ [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
              [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -45,7 +47,11 @@ player_image_up = ImageTk.PhotoImage((Image.open("tank.gif").convert('RGBA').res
 player_image_down = ImageTk.PhotoImage((Image.open("tank.gif").convert('RGBA').resize((block_width, block_height)).rotate(180)))
 player_image_right = ImageTk.PhotoImage((Image.open("tank.gif").convert('RGBA').resize((block_width, block_height)).rotate(270)))
 player_image_left = ImageTk.PhotoImage((Image.open("tank.gif").convert('RGBA').resize((block_width, block_height)).rotate(90)))
-mine_image = ImageTk.PhotoImage((Image.open("mine.gif").convert('RGBA').resize((block_width, block_height))))
+mine_image_right = ImageTk.PhotoImage((Image.open("mine.gif").convert('RGBA').resize((block_width, block_height))))
+mine_image_up = ImageTk.PhotoImage((Image.open("mine.gif").convert('RGBA').resize((block_width, block_height)).rotate(90)))
+mine_image_left = ImageTk.PhotoImage((Image.open("mine.gif").convert('RGBA').resize((block_width, block_height)).rotate(180)))
+mine_image_down = ImageTk.PhotoImage((Image.open("mine.gif").convert('RGBA').resize((block_width, block_height)).rotate(270)))
+
 
 def rotate(object, direction):
     # реализуйте функцию поворота танка/пули
@@ -95,23 +101,31 @@ def get_bullet(x, y, direction):
         rx = block_width * x + block_width // 2
         ry = block_height * (y + 1) + 10
 
-    bullets = {
+    bullet = {
         "direction": 'up',
-        "up": c.create_image(rx, ry, image=['mine'], state='normal'),
-        "down": c.create_image(rx, ry, image=['mine'], state='hidden'),
-        "left": c.create_image(rx, ry, image=['mine'], state='hidden'),
-        "right": c.create_image(rx, ry, image=['mine'], state='hidden'),
+        "up": c.create_image(rx, ry, image=mine_image_up , state='normal'),
+        "down": c.create_image(rx, ry, image=mine_image_down, state='hidden'),
+        "left": c.create_image(rx, ry, image=mine_image_left, state='hidden'),
+        "right": c.create_image(rx, ry, image=mine_image_right, state='hidden'),
     }
+    rotate(bullet, direction)
+    return bullet
+
 
 def loop():
     for bullet in bullets:
         # если пуля в клетке, которая недоступна (стена) - удалить ее
         # иначе - передвинуть на 20 пикселей в направлении ее полета
-        pass
+        if bullet ['direction'] == "up":
+            move(bullet, 0, -100)
+        if bullet ['direction'] == "down":
+            move(bullet, 0, 100)
+        if bullet ['direction'] == "right":
+            move(bullet, 100, 0)
+        if bullet ['direction'] == "left":
+            move(bullet, -100, 0)
     c.after(50, loop)
 
-    rotate(bullet, direction)
-    return bullet
 
 #координаты игрока
 x = 6
@@ -140,8 +154,21 @@ def is_available(i, j):
 def keyDown(key):
     global x, y
 
-    if key.char == 'e':
-        c.create_image(x * block_width, y * block_height, image=mine_image, anchor=NW)
+    if key.keycode == 38:
+        bullet = get_bullet(x ,y , 'up')
+        bullets.append(bullet)
+
+    if key.keycode == 37:
+        bullet = get_bullet(x ,y , 'left')
+        bullets.append(bullet)
+
+    if key.keycode == 39:
+        bullet = get_bullet(x ,y , 'right')
+        bullets.append(bullet)
+
+    if key.keycode == 40:
+        bullet = get_bullet(x ,y , 'down')
+        bullets.append(bullet)
 
     if key.char == 'a':
         c.itemconfigure(player_left, state='normal')
@@ -186,5 +213,7 @@ def keyDown(key):
 
 #при нажатии любой клавишы вызываем keyDown
 tk.bind("<KeyPress>", keyDown)
+
+c.after(50, loop)
 
 mainloop()
